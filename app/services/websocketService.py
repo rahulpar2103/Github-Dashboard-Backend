@@ -19,5 +19,5 @@ class WebSocketService:
                 await asyncio.sleep(10)
         except WebSocketDisconnect:
             print("Client disconnected")
-
+ 
 websocket_service = WebSocketService()
