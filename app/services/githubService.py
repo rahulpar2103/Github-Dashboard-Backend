@@ -1,7 +1,6 @@
 from app.core.config import settings
 import httpx
 class GithubService:
-    
     async def get_repo_events(self, repo_name: str):
         async with httpx.AsyncClient() as client:
             headers = {
