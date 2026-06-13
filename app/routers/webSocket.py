@@ -1,11 +1,8 @@
 from fastapi import APIRouter, WebSocket
-import asyncio
+from app.services.websocketService import websocket_service
+
 router = APIRouter()
 
 @router.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
-    await ws.accept()
-
-    while True:
-        await ws.send_text("hello")
-        await asyncio.sleep(5)
+    await websocket_service.websocket(ws)
