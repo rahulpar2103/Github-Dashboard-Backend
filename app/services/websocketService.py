@@ -18,6 +18,7 @@ class WebSocketService:
                     await ws.send_json(filtered_data)
                 await asyncio.sleep(10)
         except WebSocketDisconnect:
-            print("Client disconnected")
- 
+            print("Client disconnected!")
+            
+
 websocket_service = WebSocketService()
