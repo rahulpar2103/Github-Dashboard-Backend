@@ -1,17 +1,12 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+from app.schemas.github import TrackRepoRequest, UntrackRepoRequest
 from app.services.githubService import github_service
-from app.services.repoStoreService import repo_store_service
 
 router=APIRouter(prefix="/github", tags=["GitHub"])
 
-class TrackRepoRequest(BaseModel):
-    repo: str
-
 @router.post("/track")
 async def track_repo(request: TrackRepoRequest):
-    await repo_store_service.add_tracked_repo(request.repo)
-    events = await github_service.get_new_repo_events(request.repo)
+    events = await github_service.track_repository(request.repo)
     return {
         "status": "success",
         "message": f"Started tracking {request.repo}",
@@ -20,12 +15,21 @@ async def track_repo(request: TrackRepoRequest):
 
 @router.get("/tracked")
 async def get_tracked_repos():
-    repos = await repo_store_service.get_tracked_repos()
-    return {"tracked_repositories": repos}
+    results = await github_service.get_tracked_repositories_events()
+    return {"tracked_repositories": results}
+
+@router.delete("/track")
+async def untrack_repo(request: UntrackRepoRequest):
+    await github_service.untrack_repository(request.repo)
+    return {
+        "status": "success",
+        "message": f"Stopped tracking {request.repo}"
+    }
+
 
 @router.get("/{repo_name:path}/events")
 async def get_repo_events(repo_name: str):
-    await repo_store_service.add_tracked_repo(repo_name)
-    events = await github_service.get_new_repo_events(repo_name)
+    events = await github_service.get_repository_events_with_watermark(repo_name)
     return events
+
 

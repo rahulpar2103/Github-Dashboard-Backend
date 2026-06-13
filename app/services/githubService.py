@@ -25,4 +25,26 @@ class GithubService:
             await repo_store_service.set_max_id(repo_name, new_max_id)
         return filtered_events
 
+    async def track_repository(self, repo_name: str) -> list:
+        await repo_store_service.add_tracked_repo(repo_name)
+        events = await self.get_repo_events(repo_name)
+        if isinstance(events, list) and events:
+            max_id = max([int(event["id"]) for event in events if "id" in event])
+            await repo_store_service.set_max_id(repo_name, max_id)
+        return events
+
+    async def get_tracked_repositories_events(self) -> dict[str, list]:
+        repos = await repo_store_service.get_tracked_repos()
+        results = {}
+        for repo in repos:
+            events = await self.get_repo_events(repo)
+            results[repo] = events
+        return results
+
+    async def untrack_repository(self, repo_name: str) -> None:
+        await repo_store_service.remove_tracked_repo(repo_name)
+
+    async def get_repository_events_with_watermark(self, repo_name: str) -> list:
+        return await self.track_repository(repo_name)
+
 github_service=GithubService()

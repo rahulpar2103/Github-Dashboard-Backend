@@ -21,5 +21,11 @@ class RepoStoreService:
         repos = await redis_client.smembers(key)
         return list(repos)
 
+    async def remove_tracked_repo(self, repo_name: str) -> None:
+        key = "0:tracked_repos"
+        await redis_client.srem(key, repo_name)
+        await redis_client.delete(f"0:{repo_name}:max_id")
+
 repo_store_service = RepoStoreService()
+
 
