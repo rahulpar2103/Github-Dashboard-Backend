@@ -12,4 +12,14 @@ class RepoStoreService:
         key = f"0:{repo_name}:max_id"
         await redis_client.set(key, max_id)
 
+    async def add_tracked_repo(self, repo_name: str) -> None:
+        key = "0:tracked_repos"
+        await redis_client.sadd(key, repo_name)
+
+    async def get_tracked_repos(self) -> list[str]:
+        key = "0:tracked_repos"
+        repos = await redis_client.smembers(key)
+        return list(repos)
+
 repo_store_service = RepoStoreService()
+
