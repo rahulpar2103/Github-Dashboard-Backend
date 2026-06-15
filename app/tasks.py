@@ -8,7 +8,7 @@ from app.services.repoStoreService import repo_store_service
 
 @celery_app.task
 def poll_repo_events(repo_name: str):
-    """Poll a single repository for new events, save them, and publish to Pub/Sub."""
+    """Poll a single repository for new events, saves them, and publish to Pub/Sub."""
     async def _poll():
         # Create a local, task-isolated async Redis client
         async with redis.from_url(settings.REDIS_URL, decode_responses=True) as local_redis:
