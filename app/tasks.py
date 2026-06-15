@@ -17,7 +17,7 @@ def poll_repo_events(repo_name: str):
                 await local_redis.publish(channel, json.dumps(new_events))
             
     asyncio.run(_poll())
-
+#comment
 @celery_app.task
 def poll_tracked_repositories_events():
     async def _poll_all():
