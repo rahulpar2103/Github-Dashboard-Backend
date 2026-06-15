@@ -6,17 +6,17 @@ from app.services.repoStoreService import repo_store_service
 from app.core.redis import redis_client
 
 class WebSocketService:
-    async def websocket(self, ws: WebSocket, repo_name: str):
+    async def websocket(self, ws: WebSocket, repo_name: str, user_id: str = "0"):
         await ws.accept()
         
-        # 1. Add repository to tracked repositories to start background polling
-        await repo_store_service.add_tracked_repo(repo_name)
+        # 1. Add repository to tracked repositories to start background polling for this user
+        await repo_store_service.add_tracked_repo(user_id, repo_name)
         
         # 2. Retrieve and send initial cached events immediately so the UI is populated
         initial_events = await repo_store_service.get_events(repo_name)
-        if not initial_events:
+        if initial_events is None:
             # Fall back to track/fetch directly if not cached yet
-            initial_events = await github_service.track_repository(repo_name)
+            initial_events = await github_service.track_repository(repo_name, user_id=user_id)
         
         if initial_events:
             await ws.send_json(initial_events)

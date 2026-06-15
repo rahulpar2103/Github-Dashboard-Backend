@@ -41,8 +41,8 @@ class GithubService:
             await repo_store_service.set_max_id(repo_name, new_max_id)
         return filtered_events
 
-    async def track_repository(self, repo_name: str, client: httpx.AsyncClient = None) -> list:
-        await repo_store_service.add_tracked_repo(repo_name)
+    async def track_repository(self, repo_name: str, user_id: str = "0", client: httpx.AsyncClient = None) -> list:
+        await repo_store_service.add_tracked_repo(user_id, repo_name)
         events = await self.get_repo_events(repo_name, client=client)
         if isinstance(events, list) and events:
             max_id = max([int(event["id"]) for event in events if "id" in event])
@@ -54,23 +54,23 @@ class GithubService:
             await repo_store_service.add_events(repo_name, [])
         return events
 
-    async def get_tracked_repositories_events_cached(self, client: httpx.AsyncClient = None) -> dict[str, list]:
-        repos = await repo_store_service.get_tracked_repos()
+    async def get_tracked_repositories_events_cached(self, user_id: str = "0", client: httpx.AsyncClient = None) -> dict[str, list]:
+        repos = await repo_store_service.get_tracked_repos(user_id)
         results = {}
         for repo in repos:
             events = await repo_store_service.get_events(repo)
             if events is None:
-                events = await self.track_repository(repo, client=client)
+                events = await self.track_repository(repo, user_id=user_id, client=client)
             results[repo] = events
         return results
 
-    async def untrack_repository(self, repo_name: str) -> None:
-        await repo_store_service.remove_tracked_repo(repo_name)
+    async def untrack_repository(self, repo_name: str, user_id: str = "0") -> None:
+        await repo_store_service.remove_tracked_repo(user_id, repo_name)
 
-    async def get_repository_events_with_watermark(self, repo_name: str, client: httpx.AsyncClient = None) -> list:
+    async def get_repository_events_with_watermark(self, repo_name: str, user_id: str = "0", client: httpx.AsyncClient = None) -> list:
         events = await repo_store_service.get_events(repo_name)
         if events is None:
-            events = await self.track_repository(repo_name, client=client)
+            events = await self.track_repository(repo_name, user_id=user_id, client=client)
         return events
 
 github_service = GithubService()
