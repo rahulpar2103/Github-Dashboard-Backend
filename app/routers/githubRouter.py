@@ -15,7 +15,7 @@ async def track_repo(request: TrackRepoRequest):
 
 @router.get("/tracked")
 async def get_tracked_repos():
-    results = await github_service.get_tracked_repositories_events()
+    results = await github_service.get_tracked_repositories_events_cached()
     return {"tracked_repositories": results}
 
 @router.delete("/track")
