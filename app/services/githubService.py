@@ -30,47 +30,47 @@ class GithubService:
             resp = await local_client.get(url, headers=headers)
             return resp.json()
 
-    async def get_new_repo_events(self, repo_name: str, client: httpx.AsyncClient = None) -> list:
-        max_id = await repo_store_service.get_max_id(repo_name)
+    async def get_new_repo_events(self, repo_name: str, client: httpx.AsyncClient = None, redis_client = None) -> list:
+        max_id = await repo_store_service.get_max_id(repo_name, redis_client=redis_client)
         events = await self.get_repo_events(repo_name, client=client)
         if not isinstance(events, list):
             return []
         filtered_events = [event for event in events if int(event["id"]) > max_id]
         if filtered_events:
             new_max_id = max([int(event["id"]) for event in filtered_events])
-            await repo_store_service.set_max_id(repo_name, new_max_id)
+            await repo_store_service.set_max_id(repo_name, new_max_id, redis_client=redis_client)
         return filtered_events
 
-    async def track_repository(self, repo_name: str, user_id: str = "0", client: httpx.AsyncClient = None) -> list:
-        await repo_store_service.add_tracked_repo(user_id, repo_name)
+    async def track_repository(self, repo_name: str, user_id: str = "0", client: httpx.AsyncClient = None, redis_client = None) -> list:
+        await repo_store_service.add_tracked_repo(user_id, repo_name, redis_client=redis_client)
         events = await self.get_repo_events(repo_name, client=client)
         if isinstance(events, list) and events:
             max_id = max([int(event["id"]) for event in events if "id" in event])
-            await repo_store_service.set_max_id(repo_name, max_id)
+            await repo_store_service.set_max_id(repo_name, max_id, redis_client=redis_client)
             # Cache the initial events
-            await repo_store_service.add_events(repo_name, events)
+            await repo_store_service.add_events(repo_name, events, redis_client=redis_client)
         else:
             # Initialize empty cache key to avoid cold cache loop for empty repos
-            await repo_store_service.add_events(repo_name, [])
+            await repo_store_service.add_events(repo_name, [], redis_client=redis_client)
         return events
 
-    async def get_tracked_repositories_events_cached(self, user_id: str = "0", client: httpx.AsyncClient = None) -> dict[str, list]:
-        repos = await repo_store_service.get_tracked_repos(user_id)
+    async def get_tracked_repositories_events_cached(self, user_id: str = "0", client: httpx.AsyncClient = None, redis_client = None) -> dict[str, list]:
+        repos = await repo_store_service.get_tracked_repos(user_id, redis_client=redis_client)
         results = {}
         for repo in repos:
-            events = await repo_store_service.get_events(repo)
+            events = await repo_store_service.get_events(repo, redis_client=redis_client)
             if events is None:
-                events = await self.track_repository(repo, user_id=user_id, client=client)
+                events = await self.track_repository(repo, user_id=user_id, client=client, redis_client=redis_client)
             results[repo] = events
         return results
 
-    async def untrack_repository(self, repo_name: str, user_id: str = "0") -> None:
-        await repo_store_service.remove_tracked_repo(user_id, repo_name)
+    async def untrack_repository(self, repo_name: str, user_id: str = "0", redis_client = None) -> None:
+        await repo_store_service.remove_tracked_repo(user_id, repo_name, redis_client=redis_client)
 
-    async def get_repository_events_with_watermark(self, repo_name: str, user_id: str = "0", client: httpx.AsyncClient = None) -> list:
-        events = await repo_store_service.get_events(repo_name)
+    async def get_repository_events_with_watermark(self, repo_name: str, user_id: str = "0", client: httpx.AsyncClient = None, redis_client = None) -> list:
+        events = await repo_store_service.get_events(repo_name, redis_client=redis_client)
         if events is None:
-            events = await self.track_repository(repo_name, user_id=user_id, client=client)
+            events = await self.track_repository(repo_name, user_id=user_id, client=client, redis_client=redis_client)
         return events
 
 github_service = GithubService()
