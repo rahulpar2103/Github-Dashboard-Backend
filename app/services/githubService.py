@@ -47,10 +47,8 @@ class GithubService:
         if isinstance(events, list) and events:
             max_id = max([int(event["id"]) for event in events if "id" in event])
             await repo_store_service.set_max_id(repo_name, max_id, redis_client=redis_client)
-            # Cache the initial events
             await repo_store_service.add_events(repo_name, events, redis_client=redis_client)
         else:
-            # Initialize empty cache key to avoid cold cache loop for empty repos
             await repo_store_service.add_events(repo_name, [], redis_client=redis_client)
         return events
 
