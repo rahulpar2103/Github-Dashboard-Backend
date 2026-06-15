@@ -39,7 +39,7 @@ class RepoStoreService:
             await self._add_single_repo_events(repo_name_or_map, events)
 
     async def _add_single_repo_events(self, repo_name: str, new_events: list) -> None:
-        if not new_events or not isinstance(new_events, list):
+        if not isinstance(new_events, list):
             return
             
         key = f"0:{repo_name}:events"
@@ -57,11 +57,11 @@ class RepoStoreService:
         
         await redis_client.set(key, json.dumps(combined_events))
 
-    async def get_events(self, repo_name: str) -> list:
-        """Retrieve cached events for a repository from Redis."""
+    async def get_events(self, repo_name: str) -> list | None:
+        """Retrieve cached events for a repository from Redis. Returns None if cache is cold/empty."""
         key = f"0:{repo_name}:events"
         data = await redis_client.get(key)
-        return json.loads(data) if data else []
+        return json.loads(data) if data is not None else None
 
 repo_store_service = RepoStoreService()
 

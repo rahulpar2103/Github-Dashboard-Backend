@@ -1,6 +1,5 @@
 from app.core.config import settings
 import httpx
-import asyncio
 from app.services.repoStoreService import repo_store_service
 
 class GithubService:
@@ -16,7 +15,6 @@ class GithubService:
             await self.client.aclose()
 
     async def get_repo_events(self, repo_name: str, client: httpx.AsyncClient = None):
-        # Determine the active client: passed > shared > none (create local client)
         active_client = client or self.client
         
         headers = {
@@ -51,28 +49,17 @@ class GithubService:
             await repo_store_service.set_max_id(repo_name, max_id)
             # Cache the initial events
             await repo_store_service.add_events(repo_name, events)
-        return events
-
-    async def get_tracked_repositories_events(self, client: httpx.AsyncClient = None) -> dict[str, list]:
-        repos = await repo_store_service.get_tracked_repos()
-        active_client = client or self.client
-        
-        if active_client is not None:
-            tasks = [self.get_repo_events(repo, client=active_client) for repo in repos]
-            events_list = await asyncio.gather(*tasks)
         else:
-            async with httpx.AsyncClient(follow_redirects=True) as local_client:
-                tasks = [self.get_repo_events(repo, client=local_client) for repo in repos]
-                events_list = await asyncio.gather(*tasks)
-                
-        return {repo: events for repo, events in zip(repos, events_list)}
+            # Initialize empty cache key to avoid cold cache loop for empty repos
+            await repo_store_service.add_events(repo_name, [])
+        return events
 
     async def get_tracked_repositories_events_cached(self, client: httpx.AsyncClient = None) -> dict[str, list]:
         repos = await repo_store_service.get_tracked_repos()
         results = {}
         for repo in repos:
             events = await repo_store_service.get_events(repo)
-            if not events:
+            if events is None:
                 events = await self.track_repository(repo, client=client)
             results[repo] = events
         return results
@@ -82,7 +69,7 @@ class GithubService:
 
     async def get_repository_events_with_watermark(self, repo_name: str, client: httpx.AsyncClient = None) -> list:
         events = await repo_store_service.get_events(repo_name)
-        if not events:
+        if events is None:
             events = await self.track_repository(repo_name, client=client)
         return events
 
