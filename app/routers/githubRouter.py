@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.schemas.github import TrackRepoRequest, UntrackRepoRequest
 from app.services.githubService import github_service
+from app.core.security import oauth2_scheme
 
-router=APIRouter(prefix="/github", tags=["GitHub"])
+router=APIRouter(prefix="/github", tags=["GitHub"], dependencies=[Depends(oauth2_scheme)])
 
 @router.post("/track")
 async def track_repo(request: TrackRepoRequest):
