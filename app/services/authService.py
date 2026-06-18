@@ -12,7 +12,8 @@ class AuthService:
         new_user = User(
             username=user.username,
             password=hash_password(user.password),
-            email=user.email
+            email=user.email,
+            is_github_user=False
         )
         db.add(new_user)
         db.commit()
@@ -22,6 +23,8 @@ class AuthService:
     def login(self, username: str, password: str, db: Session):
         existing_user = db.query(User).filter(User.username == username).first()
         if not existing_user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        if existing_user.is_github_user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         if not verify_password(password, existing_user.password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
