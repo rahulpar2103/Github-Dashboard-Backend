@@ -2,7 +2,7 @@ from bcrypt import hashpw, checkpw, gensalt
 import jwt
 import time
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.config import settings
@@ -27,3 +27,8 @@ def verify_jwt_token(token: str) -> dict:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return verify_jwt_token(token)

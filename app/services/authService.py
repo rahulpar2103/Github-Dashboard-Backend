@@ -26,7 +26,7 @@ class AuthService:
         if not verify_password(password, existing_user.password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         access_token = create_jwt_token(
-            data={"sub": str(existing_user.id)}
+            data={"sub": str(existing_user.id), "username": existing_user.username}
         )
         return {"access_token": access_token, "token_type": "bearer"}
 

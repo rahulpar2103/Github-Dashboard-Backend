@@ -1,5 +1,6 @@
 import asyncio
 import httpx
+import time
 from app.main import app
 
 async def test_health(client):
@@ -7,6 +8,35 @@ async def test_health(client):
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
     print("[OK] Health check endpoint passed")
+
+async def test_auth(client):
+    timestamp = int(time.time())
+    username = f"testuser_{timestamp}"
+    email = f"test_{timestamp}@example.com"
+    password = "testpassword123"
+
+    # Register
+    resp = await client.post("/auth/register", json={
+        "username": username,
+        "email": email,
+        "password": password
+    })
+    assert resp.status_code in [200, 201], f"Registration failed: {resp.text}"
+    print("[OK] Register user passed")
+
+    # Login
+    resp = await client.post("/auth/login", data={
+        "username": username,
+        "password": password
+    })
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+    token_data = resp.json()
+    assert "access_token" in token_data
+    token = token_data["access_token"]
+    print("[OK] Login user passed")
+
+    # Set Authorization header for subsequent requests
+    client.headers.update({"Authorization": f"Bearer {token}"})
 
 async def test_tracking(client):
     repo = "fastapi/fastapi"
@@ -48,6 +78,7 @@ async def main():
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
         await test_health(client)
+        await test_auth(client)
         await test_tracking(client)
     print("\nAll HTTP tests passed successfully!")
 
