@@ -1,0 +1,28 @@
+services:
+  celery_worker:
+    build: .
+    command: "celery -A app.core.celery worker --loglevel=info --pool=solo"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+
+  celery_beat:
+    build: .
+    command: "celery -A app.core.celery beat --loglevel=info"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+
+  uvicorn:
+    build: .
+    command: "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+
+

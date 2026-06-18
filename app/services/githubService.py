@@ -18,6 +18,8 @@ class GithubService:
         if self.client is not None and not self.client.is_closed:
             await self.client.aclose()
 
+
+
     async def get_repo_events(self, repo_name: str, token: str = None) -> list:
         client = self.get_http_client()
         headers = {}
