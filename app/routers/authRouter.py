@@ -6,6 +6,7 @@ from app.dependencies.db import get_db
 from sqlalchemy.orm import Session
 from app.services.authService import authService
 from app.services.githubAuthService import github_auth_service
+from app.core.config import settings
 
 router=APIRouter(
     prefix="/auth",
@@ -36,4 +37,4 @@ async def github_callback(code: str, state: str, db: Session = Depends(get_db)):
     github_user = await github_auth_service.fetch_github_user(github_token)
     user = github_auth_service.upsert_user(db, github_user, github_token)
     access_token = github_auth_service.issue_jwt(user)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return RedirectResponse(f"{settings.FRONTEND_URL}/auth/github/callback?access_token={access_token}")
